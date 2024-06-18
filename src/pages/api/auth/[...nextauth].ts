@@ -28,7 +28,7 @@ export const authOptions = {
                      q.Exists(
                         //O Match é como se fosse where
                         q.Match(
-                           q.Index('users_by_email'),
+                           q.Index('user_by_email'),
                            q.Casefold(user.email) //colocar tudo minúsculo, para quando o ususário escrever de qualquer jeito
                         )
                      )
@@ -45,7 +45,7 @@ export const authOptions = {
                   //caso contrário ele vai pegar esse usuário
                   q.Get(
                      q.Match(
-                        q.Index('users_by_email'),
+                        q.Index('user_by_email'),
                         q.Casefold(user.email)
                      )
                   )
