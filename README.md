@@ -30,6 +30,10 @@ O projeto segue a estrutura padrão do Next.js, com páginas dinâmicas para pos
 
 ## Screenshots
 
+<div style="display: flex; justify-content: space-around;">
+    <img src="./public/.github/Home.png" alt="Screenshot 1" width="400" style="border-right: 1px solid #ccc; padding-right: 20px;">
+    <img src="./public/.github/Posts.png" alt="Screenshot 2" width="400" style="padding-left: 20px;">
+</div>
 
 ## Contribuições
 
