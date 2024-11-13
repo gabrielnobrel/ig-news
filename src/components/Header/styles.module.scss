@@ -27,7 +27,7 @@
       transition: color 0.2s;
 
       & + a {
-        // "a" que tiver um "a" antes acrescentar o seguinte:
+        // "a" que tiver um "a" antes, acrescentar o seguinte:
         margin-left: 2rem;
       }
 
@@ -37,6 +37,7 @@
 
       &.active {
         color: var(--white);
+        font-weight: bold;
       }
 
       &.active::after {

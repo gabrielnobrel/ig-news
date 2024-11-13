@@ -1,63 +1,96 @@
-import { query as q } from 'faunadb'
-
-import NextAuth from "next-auth"
-import GithubProvider from "next-auth/providers/github"
-
-import { fauna } from '../../../services/fauna'
+import { query as q } from 'faunadb';
+import NextAuth from "next-auth";
+import GithubProvider from "next-auth/providers/github";
+import { fauna } from '../../../services/fauna';
 
 if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
    throw new Error("Missing GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET environment variables.");
 }
 
 export const authOptions = {
-   // Configure one or more authentication providers
    providers: [
       GithubProvider({
          clientId: process.env.GITHUB_CLIENT_ID,
          clientSecret: process.env.GITHUB_CLIENT_SECRET,
       }),
    ],
+
    callbacks: {
-      async signIn({ user, account, profile }) {
-         const { email } = user
+      async session({ session }) {
+         try {
+            const userActiveSubscription = await fauna.query(
+               q.Get(
+                  q.Intersection([
+                     q.Match(
+                        q.Index('subscription_by_user_ref'),
+                        q.Select(
+                           'ref',
+                           q.Get(
+                              q.Match(
+                                 q.Index('user_by_email'),
+                                 q.Casefold(session.user.email)
+                              )
+                           )
+                        )
+                     ),
+                     q.Match(
+                        q.Index('subscription_by_status'),
+                        "active"
+                     )
+                  ])
+               )
+            );
+            return {
+               ...session,
+               activeSubscription: userActiveSubscription
+            };
+         } catch (error) {
+            console.error("Error fetching active subscription:", error);
+            return {
+               ...session,
+               activeSubscription: null
+            };
+         }
+      },
+
+      async signIn({ user }) {
+         const { email } = user;
+
+         if (!email) {
+            console.error("User email is missing.");
+            return false;
+         }
+
          try {
             await fauna.query(
-               // Verificar se o usuário existe
                q.If(
                   q.Not(
                      q.Exists(
-                        //O Match é como se fosse where
                         q.Match(
                            q.Index('user_by_email'),
-                           q.Casefold(user.email) //colocar tudo minúsculo, para quando o ususário escrever de qualquer jeito
+                           q.Casefold(email)
                         )
                      )
                   ),
-                  //caso ele não exista será criado
                   q.Create(
                      q.Collection('users'),
-                     {
-                        data: {
-                           email
-                        }
-                     }
+                     { data: { email } }
                   ),
-                  //caso contrário ele vai pegar esse usuário
                   q.Get(
                      q.Match(
                         q.Index('user_by_email'),
-                        q.Casefold(user.email)
+                        q.Casefold(email)
                      )
                   )
                )
-            )
-            return true
-         } catch {
-            return false
+            );
+            return true;
+         } catch (error) {
+            console.error("Error signing in user:", error);
+            return false;
          }
-         return true
       }
    }
-}
+};
 
-export default NextAuth(authOptions)
+export default NextAuth(authOptions);
